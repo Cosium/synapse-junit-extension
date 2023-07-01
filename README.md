@@ -1,7 +1,7 @@
 [![Build Status](https://github.com/Cosium/synapse-junit-extension/actions/workflows/ci.yml/badge.svg)](https://github.com/Cosium/synapse-junit-extension/actions/workflows/ci.yml)
 [![Maven Central](https://img.shields.io/maven-central/v/com.cosium.synapse_junit_extension/synapse-junit-extension.svg)](https://search.maven.org/#search%7Cgav%7C1%7Cg%3A%22com.cosium.synapse_junit_extension%22%20AND%20a%3A%22synapse-junit-extension%22)
 
-# Matrix Communication Client
+# Synapse Junit Extension
 
 Unit extension allowing to run tests against a real [Synapse](https://github.com/matrix-org/synapse) instance.
 
