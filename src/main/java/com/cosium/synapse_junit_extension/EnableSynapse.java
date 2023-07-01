@@ -6,7 +6,10 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
+import java.util.Optional;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.testcontainers.containers.Network;
 
 /**
  * Allows a test class to make use of {@link Synapse} instance.
@@ -25,9 +28,18 @@ public @interface EnableSynapse {
   String value() default SynapseExtension.DEFAULT_DOCKER_IMAGE_NAME;
 
   /**
-   * @return A key allowing to retrieve the {@link org.testcontainers.containers.Network} instance
-   *     from {@link org.junit.jupiter.api.extension.ExtensionContext.Namespace#GLOBAL} that will be
-   *     used by {@link Synapse}. If empty, {@link Synapse} will use default docker network.
+   * @return A {@link DockerNetworkProvider} class allowing to retrieve a {@link
+   *     org.testcontainers.containers.Network} given an {@link
+   *     org.junit.jupiter.api.extension.ExtensionContext}. The class must expose an empty
+   *     constructor to allow {@link SynapseExtension} to initialize it.
    */
-  String dockerNetworkStoreKey() default "";
+  Class<? extends DockerNetworkProvider> dockerNetworkProvider() default
+      DefaultDockerNetworkProvider.class;
+
+  class DefaultDockerNetworkProvider implements DockerNetworkProvider {
+    @Override
+    public Optional<Network> get(ExtensionContext context) {
+      return Optional.empty();
+    }
+  }
 }

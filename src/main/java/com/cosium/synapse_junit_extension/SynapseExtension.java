@@ -1,12 +1,15 @@
 package com.cosium.synapse_junit_extension;
 
+import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Supplier;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.junit.jupiter.api.extension.ParameterResolver;
 import org.junit.platform.commons.support.AnnotationSupport;
+import org.junit.platform.commons.support.ReflectionSupport;
 import org.testcontainers.containers.Network;
 
 public class SynapseExtension implements BeforeAllCallback, ParameterResolver {
@@ -36,37 +39,65 @@ public class SynapseExtension implements BeforeAllCallback, ParameterResolver {
   private static class Environment {
 
     private final ExtensionContext.Store store;
-    private final String dockerImageName;
-    private final String dockerNetworkStoreKey;
-    private final String storeKey;
+    private final EnableSynapseMetadata metadata;
 
     public Environment(ExtensionContext context) {
       store = context.getRoot().getStore(ExtensionContext.Namespace.GLOBAL);
+      metadata = new EnableSynapseMetadata(context);
+    }
+
+    public void addNewSynapseIfNeed() {
+      if (store.get(metadata) != null) {
+        return;
+      }
+      CloseableResource<Synapse> server =
+          Synapse.start(metadata.dockerImageName, metadata.networkSupplier.get().orElse(null));
+      store.put(new Object(), new JUnitCloseableResource(server::close));
+      store.put(metadata, server.resource());
+    }
+
+    public Synapse getSynapse() {
+      return store.get(metadata, Synapse.class);
+    }
+  }
+
+  private static class EnableSynapseMetadata {
+    private final String dockerImageName;
+    private final Class<? extends DockerNetworkProvider> dockerNetworkProviderClass;
+    private final Supplier<Optional<Network>> networkSupplier;
+
+    EnableSynapseMetadata(ExtensionContext context) {
       Optional<EnableSynapse> enableSynapse =
           context
               .getTestClass()
               .flatMap(
                   testClass -> AnnotationSupport.findAnnotation(testClass, EnableSynapse.class));
       dockerImageName = enableSynapse.map(EnableSynapse::value).orElse(DEFAULT_DOCKER_IMAGE_NAME);
-      dockerNetworkStoreKey = enableSynapse.map(EnableSynapse::dockerNetworkStoreKey).orElse(null);
-      storeKey = Synapse.class + "#" + dockerImageName;
+      dockerNetworkProviderClass =
+          enableSynapse.map(EnableSynapse::dockerNetworkProvider).orElse(null);
+      networkSupplier =
+          () ->
+              Optional.ofNullable(dockerNetworkProviderClass)
+                  .map(ReflectionSupport::newInstance)
+                  .flatMap(provider -> provider.get(context));
     }
 
-    public void addNewSynapseIfNeed() {
-      if (store.get(storeKey) != null) {
-        return;
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) {
+        return true;
       }
-      Network network = null;
-      if (dockerNetworkStoreKey != null && !dockerNetworkStoreKey.isBlank()) {
-        network = store.get(dockerNetworkStoreKey, Network.class);
+      if (o == null || getClass() != o.getClass()) {
+        return false;
       }
-      CloseableResource<Synapse> server = Synapse.start(dockerImageName, network);
-      store.put(storeKey + "#close", new JUnitCloseableResource(server::close));
-      store.put(storeKey, server.resource());
+      EnableSynapseMetadata that = (EnableSynapseMetadata) o;
+      return Objects.equals(dockerImageName, that.dockerImageName)
+          && Objects.equals(dockerNetworkProviderClass, that.dockerNetworkProviderClass);
     }
 
-    public Synapse getSynapse() {
-      return store.get(storeKey, Synapse.class);
+    @Override
+    public int hashCode() {
+      return Objects.hash(dockerImageName, dockerNetworkProviderClass);
     }
   }
 }
