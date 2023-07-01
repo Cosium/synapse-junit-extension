@@ -37,6 +37,8 @@ public class Synapse {
 
   private final GenericContainer<?> container;
 
+  private final String hostname;
+  private final int port;
   private final String url;
 
   private Synapse(String dockerImageName, Network network) {
@@ -62,7 +64,9 @@ public class Synapse {
             "/data/homeserver.yaml",
             inputStream -> ObjectMappers.forYaml().readValue(inputStream, HomeServerConfig.class));
 
-    url = String.format("http://%s:%s", "localhost", container.getMappedPort(HTTP_PORT));
+    hostname = "localhost";
+    port = container.getMappedPort(HTTP_PORT);
+    url = String.format("http://%s:%s", hostname, port);
     new SynapseClient(url)
         .createUser(serverConfig.registrationSharedSecret(), ADMIN_USERNAME, ADMIN_PASSWORD, true);
   }
@@ -104,12 +108,36 @@ public class Synapse {
         .withEnv("SYNAPSE_REPORT_STATS", "no");
   }
 
+  public boolean https() {
+    return false;
+  }
+
+  public String hostname() {
+    return hostname;
+  }
+
+  public int port() {
+    return port;
+  }
+
   public String url() {
     return url;
   }
 
+  public boolean dockerHttps() {
+    return false;
+  }
+
+  public String dockerHostname() {
+    return NETWORK_ALIAS;
+  }
+
+  public int dockerPort() {
+    return HTTP_PORT;
+  }
+
   public String dockerUrl() {
-    return "http://" + NETWORK_ALIAS + ":" + HTTP_PORT;
+    return "http://" + dockerHostname() + ":" + dockerPort();
   }
 
   public String adminUsername() {
