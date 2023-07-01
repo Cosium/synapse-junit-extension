@@ -10,18 +10,18 @@ Unit extension allowing to run tests against a real [Synapse](https://github.com
 ```java
 @EnableSynapse
 class SynapseTest {
+  @Test
+  void test(Synapse synapse) throws IOException, InterruptedException {
+    URI synapseUri = URI.create(synapse.url() + "/_matrix/static/");
+    HttpResponse<String> response = HttpClient
+      .newHttpClient()
+      .send(
+        HttpRequest.newBuilder(synapseUri).GET().build(),
+	HttpResponse.BodyHandlers.ofString());
 
-	@Test
-	void test(Synapse synapse) throws IOException, InterruptedException {
-		URI synapseUri = URI.create(synapse.url() + "/_matrix/static/");
-		HttpResponse<String> response =
-				HttpClient.newHttpClient()
-						.send(
-								HttpRequest.newBuilder(synapseUri).GET().build(),
-								HttpResponse.BodyHandlers.ofString());
-		assertThat(response.body()).contains("Synapse is running");
-		assertThat(response.statusCode()).isEqualTo(200);
-	}
+    assertThat(response.body()).contains("Synapse is running");
+    assertThat(response.statusCode()).isEqualTo(200);
+  }
 }
 ```
 
