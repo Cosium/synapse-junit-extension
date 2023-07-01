@@ -7,14 +7,14 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * @author Réda Housni Alaoui
  */
 public class Versions {
-	private final String serverVersion;
+  private final String serverVersion;
 
-	@JsonCreator
-	private Versions(@JsonProperty("server_version") String serverVersion) {
-		this.serverVersion = serverVersion;
-	}
+  @JsonCreator
+  private Versions(@JsonProperty("server_version") String serverVersion) {
+    this.serverVersion = serverVersion;
+  }
 
-	public String serverVersion() {
-		return serverVersion;
-	}
+  public String serverVersion() {
+    return serverVersion;
+  }
 }
