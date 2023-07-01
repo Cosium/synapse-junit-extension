@@ -12,7 +12,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import org.testcontainers.containers.Network;
 
 /**
- * Allows a test class to make use of {@link Synapse} instance.
+ * Allows a test class to make use of {@link Synapse}.
  *
  * @author Réda Housni Alaoui
  */
