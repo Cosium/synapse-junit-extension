@@ -3,7 +3,7 @@
 
 # Synapse Junit Extension
 
-JUnit extension allowing to run tests against a real [Synapse](https://github.com/matrix-org/synapse) instance.
+[JUnit](https://junit.org) extension allowing to run tests against a real [Synapse](https://github.com/matrix-org/synapse) instance.
 
 # Usage
 
