@@ -27,8 +27,6 @@ public class Synapse {
 
   private static final int HTTP_PORT = 8008;
 
-  private static final String IMAGE_NAME = "matrixdotorg/synapse:v1.86.0";
-
   private static final String NETWORK_ALIAS = "matrix-server";
   private static final String ADMIN_USERNAME = "admin_user";
   private static final String ADMIN_PASSWORD = "admin_secret";
@@ -42,11 +40,11 @@ public class Synapse {
   private final int port;
   private final String url;
 
-  private Synapse() {
+  private Synapse(String dockerImageName) {
     String volumeName = "jenkins-pipeline-library.matrix-server." + UUID.randomUUID();
 
     try (GenericContainer<?> transientContainer =
-        createContainer(volumeName)
+        createContainer(dockerImageName, volumeName)
             .withCommand("generate")
             .waitingFor(
                 new LogMessageWaitStrategy().withRegEx(".*A config file has been generated.*"))) {
@@ -54,7 +52,7 @@ public class Synapse {
     }
 
     container =
-        createContainer(volumeName).withExposedPorts(HTTP_PORT).withNetworkAliases(NETWORK_ALIAS);
+        createContainer(dockerImageName, volumeName).withExposedPorts(HTTP_PORT).withNetworkAliases(NETWORK_ALIAS);
     container.start();
 
     HomeServerConfig serverConfig =
@@ -70,8 +68,8 @@ public class Synapse {
         .createUser(serverConfig.registrationSharedSecret(), ADMIN_USERNAME, ADMIN_PASSWORD, true);
   }
 
-  static CloseableResource<Synapse> start() {
-    Synapse server = new Synapse();
+  static CloseableResource<Synapse> start(String dockerImageName) {
+    Synapse server = new Synapse(dockerImageName);
     return new CloseableResource<>() {
 
       @Override
@@ -86,10 +84,10 @@ public class Synapse {
     };
   }
 
-  private static GenericContainer<?> createContainer(String volumeName) {
+  private static GenericContainer<?> createContainer(String dockerImageName, String volumeName) {
     ResourceReaper.instance().registerLabelsFilterForCleanup(VOLUME_LABELS);
 
-    return new GenericContainer<>(DockerImageName.parse(IMAGE_NAME))
+    return new GenericContainer<>(DockerImageName.parse(dockerImageName))
         .withLogConsumer(new Slf4jLogConsumer(LOGGER))
         .withStartupTimeout(Duration.ofMinutes(30))
         .withCreateContainerCmdModifier(

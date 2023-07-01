@@ -10,13 +10,7 @@ public class SynapseTestExtension implements BeforeAllCallback, ParameterResolve
 
   @Override
   public void beforeAll(ExtensionContext context) {
-    ExtensionContext.Store store = context.getRoot().getStore(ExtensionContext.Namespace.GLOBAL);
-    if (store.get(Synapse.class) != null) {
-      return;
-    }
-    CloseableResource<Synapse> server = Synapse.start();
-    store.put(Synapse.class + "#close", new JUnitCloseableResource(server::close));
-    store.put(Synapse.class, server.resource());
+    new Environment(context).addNewSynapseIfNeed();
   }
 
   @Override
@@ -31,9 +25,37 @@ public class SynapseTestExtension implements BeforeAllCallback, ParameterResolve
       ParameterContext parameterContext, ExtensionContext extensionContext)
       throws ParameterResolutionException {
 
-    return extensionContext
-        .getRoot()
-        .getStore(ExtensionContext.Namespace.GLOBAL)
-        .get(Synapse.class, Synapse.class);
+    return new Environment(extensionContext).getSynapse();
+  }
+
+  private static class Environment {
+
+    private final ExtensionContext.Store store;
+    private final String dockerImageName;
+    private final String storeKey;
+
+    public Environment(ExtensionContext context) {
+      store = context.getRoot().getStore(ExtensionContext.Namespace.GLOBAL);
+      dockerImageName =
+          context
+              .getTestClass()
+              .map(testClass -> testClass.getAnnotation(EnableSynapse.class))
+              .map(EnableSynapse::value)
+              .orElse(EnableSynapse.DEFAULT_DOCKER_IMAGE_NAME);
+      storeKey = Synapse.class + "#" + dockerImageName;
+    }
+
+    public void addNewSynapseIfNeed() {
+      if (store.get(storeKey) != null) {
+        return;
+      }
+      CloseableResource<Synapse> server = Synapse.start(dockerImageName);
+      store.put(storeKey + "#close", new JUnitCloseableResource(server::close));
+      store.put(storeKey, server.resource());
+    }
+
+    public Synapse getSynapse() {
+      return store.get(storeKey, Synapse.class);
+    }
   }
 }

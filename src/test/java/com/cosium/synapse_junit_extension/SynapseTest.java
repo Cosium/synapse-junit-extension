@@ -6,24 +6,27 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import org.junit.jupiter.api.Test;
 
 /**
  * @author Réda Housni Alaoui
  */
-@EnableSynapse
+@EnableSynapse("matrixdotorg/synapse:v1.85.0")
 class SynapseTest {
 
   @Test
   void test(Synapse synapse) throws IOException, InterruptedException {
-    URI synapseUri = URI.create(synapse.url() + "/_matrix/static/");
-    HttpResponse<String> response =
+    assertThat(EnableSynapse.DEFAULT_DOCKER_IMAGE_NAME)
+        .doesNotContain("1.85.0");
+
+    URI versionsUri = URI.create(synapse.url() + "/_synapse/admin/v1/server_version");
+    Versions versions =
         HttpClient.newHttpClient()
             .send(
-                HttpRequest.newBuilder(synapseUri).GET().build(),
-                HttpResponse.BodyHandlers.ofString());
-    assertThat(response.body()).contains("Synapse is running");
-    assertThat(response.statusCode()).isEqualTo(200);
+                HttpRequest.newBuilder(versionsUri).GET().build(),
+                JsonHandlers.INSTANCE.handler(Versions.class))
+            .body()
+            .parse();
+    assertThat(versions.serverVersion()).isEqualTo("1.85.0");
   }
 }
