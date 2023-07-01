@@ -31,7 +31,7 @@ with `@EnableSynapse`. Therefore, you can run a test suite containing as many te
 <dependency>
   <groupId>com.cosium.synapse_junit_extension</groupId>
   <artifactId>synapse-junit-extension</artifactId>
-  <verion>${matrix-communication-client.version}</verion>
+  <verion>${synapse-junit-extension.version}</verion>
   <scope>test</scope>
 </dependency>
 ```
