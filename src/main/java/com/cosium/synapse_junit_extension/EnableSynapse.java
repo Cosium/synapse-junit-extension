@@ -15,14 +15,19 @@ import org.junit.jupiter.api.extension.ExtendWith;
  */
 @Target({TYPE, ANNOTATION_TYPE})
 @Retention(RUNTIME)
-@ExtendWith(SynapseTestExtension.class)
+@ExtendWith(SynapseExtension.class)
 public @interface EnableSynapse {
 
   /**
    * @return The name of the docker image to use. It must be compatible with {@link
-   *     #DEFAULT_DOCKER_IMAGE_NAME}
+   *     SynapseExtension#DEFAULT_DOCKER_IMAGE_NAME}
    */
-  String value() default DEFAULT_DOCKER_IMAGE_NAME;
+  String value() default SynapseExtension.DEFAULT_DOCKER_IMAGE_NAME;
 
-  String DEFAULT_DOCKER_IMAGE_NAME = "matrixdotorg/synapse:v1.86.0";
+  /**
+   * @return A key allowing to retrieve the {@link org.testcontainers.containers.Network} instance
+   *     from {@link org.junit.jupiter.api.extension.ExtensionContext.Namespace#GLOBAL} that will be
+   *     used by {@link Synapse}. If empty, {@link Synapse} will use default docker network.
+   */
+  String dockerNetworkStoreKey() default "";
 }

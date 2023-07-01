@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.Network;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy;
 import org.testcontainers.utility.DockerImageName;
@@ -36,12 +37,10 @@ public class Synapse {
 
   private final GenericContainer<?> container;
 
-  private final String hostname;
-  private final int port;
   private final String url;
 
-  private Synapse(String dockerImageName) {
-    String volumeName = "jenkins-pipeline-library.matrix-server." + UUID.randomUUID();
+  private Synapse(String dockerImageName, Network network) {
+    String volumeName = "synapse-junit-extension.synapse." + UUID.randomUUID();
 
     try (GenericContainer<?> transientContainer =
         createContainer(dockerImageName, volumeName)
@@ -52,7 +51,10 @@ public class Synapse {
     }
 
     container =
-        createContainer(dockerImageName, volumeName).withExposedPorts(HTTP_PORT).withNetworkAliases(NETWORK_ALIAS);
+        createContainer(dockerImageName, volumeName)
+            .withExposedPorts(HTTP_PORT)
+            .withNetwork(network)
+            .withNetworkAliases(NETWORK_ALIAS);
     container.start();
 
     HomeServerConfig serverConfig =
@@ -60,16 +62,13 @@ public class Synapse {
             "/data/homeserver.yaml",
             inputStream -> ObjectMappers.forYaml().readValue(inputStream, HomeServerConfig.class));
 
-    hostname = "localhost";
-    port = container.getMappedPort(HTTP_PORT);
-
-    url = String.format("http://%s:%s", hostname, port);
+    url = String.format("http://%s:%s", "localhost", container.getMappedPort(HTTP_PORT));
     new SynapseClient(url)
         .createUser(serverConfig.registrationSharedSecret(), ADMIN_USERNAME, ADMIN_PASSWORD, true);
   }
 
-  static CloseableResource<Synapse> start(String dockerImageName) {
-    Synapse server = new Synapse(dockerImageName);
+  static CloseableResource<Synapse> start(String dockerImageName, Network network) {
+    Synapse server = new Synapse(dockerImageName, network);
     return new CloseableResource<>() {
 
       @Override
@@ -105,16 +104,12 @@ public class Synapse {
         .withEnv("SYNAPSE_REPORT_STATS", "no");
   }
 
-  public String hostname() {
-    return "localhost";
-  }
-
-  public int port() {
-    return container.getMappedPort(HTTP_PORT);
-  }
-
   public String url() {
     return url;
+  }
+
+  public String dockerUrl() {
+    return "http://" + NETWORK_ALIAS + ":" + HTTP_PORT;
   }
 
   public String adminUsername() {

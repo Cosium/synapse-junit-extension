@@ -16,8 +16,7 @@ class SynapseTest {
 
   @Test
   void test(Synapse synapse) throws IOException, InterruptedException {
-    assertThat(EnableSynapse.DEFAULT_DOCKER_IMAGE_NAME)
-        .doesNotContain("1.85.0");
+    assertThat(SynapseExtension.DEFAULT_DOCKER_IMAGE_NAME).doesNotContain("1.85.0");
 
     URI versionsUri = URI.create(synapse.url() + "/_synapse/admin/v1/server_version");
     Versions versions =
