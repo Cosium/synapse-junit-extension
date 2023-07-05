@@ -71,7 +71,7 @@ public class Synapse {
         .createUser(serverConfig.registrationSharedSecret(), ADMIN_USERNAME, ADMIN_PASSWORD, true);
   }
 
-  static CloseableResource<Synapse> start(String dockerImageName, Network network) {
+  public static CloseableResource<Synapse> start(String dockerImageName, Network network) {
     Synapse server = new Synapse(dockerImageName, network);
     return new CloseableResource<>() {
 
