@@ -36,6 +36,11 @@ public @interface EnableSynapse {
   Class<? extends DockerNetworkProvider> dockerNetworkProvider() default
       DefaultDockerNetworkProvider.class;
 
+  /**
+   * @return The docker network alias to assign to the docker container.
+   */
+  String dockerNetworkAlias() default SynapseExtension.DEFAULT_NETWORK_ALIAS;
+
   class DefaultDockerNetworkProvider implements DockerNetworkProvider {
     @Override
     public Optional<Network> get(ExtensionContext context) {
