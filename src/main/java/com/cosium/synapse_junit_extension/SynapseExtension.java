@@ -15,6 +15,7 @@ import org.testcontainers.containers.Network;
 public class SynapseExtension implements BeforeAllCallback, ParameterResolver {
 
   public static final String DEFAULT_DOCKER_IMAGE_NAME = "matrixdotorg/synapse:v1.86.0";
+  public static final String DEFAULT_NETWORK_ALIAS = "synapse";
 
   @Override
   public void beforeAll(ExtensionContext context) {
@@ -50,8 +51,12 @@ public class SynapseExtension implements BeforeAllCallback, ParameterResolver {
       if (store.get(metadata) != null) {
         return;
       }
-      CloseableResource<Synapse> server =
-          Synapse.start(metadata.dockerImageName, metadata.networkSupplier.get().orElse(null));
+      Synapse.Starter starter =
+          Synapse.starter()
+              .dockerImageName(metadata.dockerImageName)
+              .networkAlias(metadata.networkAlias);
+      metadata.networkSupplier.get().ifPresent(starter::network);
+      CloseableResource<Synapse> server = starter.start();
       store.put(new Object(), new JUnitCloseableResource(server::close));
       store.put(metadata, server.resource());
     }
@@ -65,6 +70,7 @@ public class SynapseExtension implements BeforeAllCallback, ParameterResolver {
     private final String dockerImageName;
     private final Class<? extends DockerNetworkProvider> dockerNetworkProviderClass;
     private final Supplier<Optional<Network>> networkSupplier;
+    private final String networkAlias;
 
     EnableSynapseMetadata(ExtensionContext context) {
       Optional<EnableSynapse> enableSynapse =
@@ -80,6 +86,8 @@ public class SynapseExtension implements BeforeAllCallback, ParameterResolver {
               Optional.ofNullable(dockerNetworkProviderClass)
                   .map(ReflectionSupport::newInstance)
                   .flatMap(provider -> provider.get(context));
+      networkAlias =
+          enableSynapse.map(EnableSynapse::dockerNetworkAlias).orElse(DEFAULT_NETWORK_ALIAS);
     }
 
     @Override

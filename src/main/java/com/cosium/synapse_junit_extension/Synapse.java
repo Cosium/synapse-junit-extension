@@ -28,7 +28,6 @@ public class Synapse {
 
   private static final int HTTP_PORT = 8008;
 
-  private static final String NETWORK_ALIAS = "matrix-server";
   private static final String ADMIN_USERNAME = "admin_user";
   private static final String ADMIN_PASSWORD = "admin_secret";
 
@@ -40,12 +39,16 @@ public class Synapse {
   private final String hostname;
   private final int port;
   private final String url;
+  private final String networkAlias;
 
-  private Synapse(String dockerImageName, Network network) {
+  private Synapse(Starter starter) {
     String volumeName = "synapse-junit-extension.synapse." + UUID.randomUUID();
 
+    networkAlias = starter.networkAlias;
+
+    String dockerImageName = starter.dockerImageName;
     try (GenericContainer<?> transientContainer =
-        createContainer(dockerImageName, volumeName)
+        createContainer(dockerImageName, volumeName, networkAlias)
             .withCommand("generate")
             .waitingFor(
                 new LogMessageWaitStrategy().withRegEx(".*A config file has been generated.*"))) {
@@ -53,10 +56,10 @@ public class Synapse {
     }
 
     container =
-        createContainer(dockerImageName, volumeName)
+        createContainer(dockerImageName, volumeName, networkAlias)
             .withExposedPorts(HTTP_PORT)
-            .withNetwork(network)
-            .withNetworkAliases(NETWORK_ALIAS);
+            .withNetwork(starter.network)
+            .withNetworkAliases(networkAlias);
     container.start();
 
     HomeServerConfig serverConfig =
@@ -71,23 +74,20 @@ public class Synapse {
         .createUser(serverConfig.registrationSharedSecret(), ADMIN_USERNAME, ADMIN_PASSWORD, true);
   }
 
-  public static CloseableResource<Synapse> start(String dockerImageName, Network network) {
-    Synapse server = new Synapse(dockerImageName, network);
-    return new CloseableResource<>() {
-
-      @Override
-      public Synapse resource() {
-        return server;
-      }
-
-      @Override
-      public void close() {
-        server.stop();
-      }
-    };
+  public static Starter starter() {
+    return new Starter();
   }
 
-  private static GenericContainer<?> createContainer(String dockerImageName, String volumeName) {
+  /**
+   * @deprecated Use {@link #starter()} instead
+   */
+  @Deprecated(forRemoval = true)
+  public static CloseableResource<Synapse> start(String dockerImageName, Network network) {
+    return starter().dockerImageName(dockerImageName).network(network).start();
+  }
+
+  private static GenericContainer<?> createContainer(
+      String dockerImageName, String volumeName, String networkAlias) {
     ResourceReaper.instance().registerLabelsFilterForCleanup(VOLUME_LABELS);
 
     return new GenericContainer<>(DockerImageName.parse(dockerImageName))
@@ -104,7 +104,7 @@ public class Synapse {
                           .withSource(volumeName)
                           .withTarget("/data")));
             })
-        .withEnv("SYNAPSE_SERVER_NAME", NETWORK_ALIAS)
+        .withEnv("SYNAPSE_SERVER_NAME", networkAlias)
         .withEnv("SYNAPSE_REPORT_STATS", "no");
   }
 
@@ -129,7 +129,7 @@ public class Synapse {
   }
 
   public String dockerHostname() {
-    return NETWORK_ALIAS;
+    return networkAlias;
   }
 
   public int dockerPort() {
@@ -150,5 +150,44 @@ public class Synapse {
 
   private void stop() {
     container.stop();
+  }
+
+  public static class Starter {
+    private String dockerImageName = SynapseExtension.DEFAULT_DOCKER_IMAGE_NAME;
+    private Network network;
+    private String networkAlias = SynapseExtension.DEFAULT_NETWORK_ALIAS;
+
+    private Starter() {}
+
+    public Starter dockerImageName(String dockerImageName) {
+      this.dockerImageName = requireNonNull(dockerImageName);
+      return this;
+    }
+
+    public Starter network(Network network) {
+      this.network = network;
+      return this;
+    }
+
+    public Starter networkAlias(String networkAlias) {
+      this.networkAlias = requireNonNull(networkAlias);
+      return this;
+    }
+
+    public CloseableResource<Synapse> start() {
+      Synapse server = new Synapse(this);
+      return new CloseableResource<>() {
+
+        @Override
+        public Synapse resource() {
+          return server;
+        }
+
+        @Override
+        public void close() {
+          server.stop();
+        }
+      };
+    }
   }
 }
