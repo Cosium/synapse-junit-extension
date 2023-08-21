@@ -16,7 +16,7 @@
     <junit.version>5.10.0</junit.version>
     <slf4j.version>2.0.7</slf4j.version>
     <jackson.version>2.15.2</jackson.version>
-    <testcontainers.version>1.18.3</testcontainers.version>
+    <testcontainers.version>1.19.0</testcontainers.version>
     <commons-codec.version>1.16.0</commons-codec.version>
 
     <assertj.version>3.24.2</assertj.version>
