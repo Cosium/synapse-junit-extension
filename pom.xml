@@ -19,7 +19,7 @@
     <testcontainers.version>1.20.4</testcontainers.version>
     <commons-codec.version>1.17.2</commons-codec.version>
 
-    <assertj.version>3.27.2</assertj.version>
+    <assertj.version>3.27.3</assertj.version>
     <logback-classic.version>1.5.16</logback-classic.version>
 
     <git-code-format-maven-plugin.version>5.3</git-code-format-maven-plugin.version>
