@@ -20,7 +20,7 @@
     <commons-codec.version>1.21.0</commons-codec.version>
 
     <assertj.version>3.27.7</assertj.version>
-    <logback-classic.version>1.5.26</logback-classic.version>
+    <logback-classic.version>1.5.27</logback-classic.version>
 
     <git-code-format-maven-plugin.version>5.4</git-code-format-maven-plugin.version>
   </properties>
