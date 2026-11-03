@@ -8,7 +8,7 @@
   <groupId>com.cosium.synapse_junit_extension</groupId>
   <artifactId>synapse-junit-extension</artifactId>
   <name>Synapse JUnit Extension</name>
-  <version>1.4</version>
+  <version>1.5-SNAPSHOT</version>
 
   <properties>
     <maven.compiler.source>11</maven.compiler.source>
@@ -131,8 +131,4 @@
     </plugin>
   </plugins>
 </build>
-
-  <scm>
-    <tag>1.4</tag>
-  </scm>
 </project>
